@@ -12,8 +12,8 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.5"
-__date__ = "10/05/2023"
+__version__ = "0.5.1"
+__date__ = "11/05/2023"
 
 
 # Setup parser
@@ -166,6 +166,7 @@ def valid_out(outdir):
         logging.info("Output directory: {od} has been created".format(od=outdir))
 
 
+# Running analysis
 def process_run(cmd_in, process_start, completion):
     logging.info(process_start)
     process = subprocess.run([cmd_in],
@@ -182,6 +183,7 @@ def process_run(cmd_in, process_start, completion):
         logging.info(completion)
 
 
+# Error posting during analysis
 def process_err(process):
     logging.error(process.stderr)
     tend = int(time.time() - start_time)
@@ -190,7 +192,7 @@ def process_err(process):
     sys.exit(1)
 
 
-# Preparing working folder for processing of multiple datasets
+# Preparing working folder for processing of  datasets
 def work_prep():
     logging.info("Preparing working folder for {fc} inputs"
                  .format(fc=str(folder_count)))
@@ -203,7 +205,7 @@ def work_prep():
         num_folder += 1
 
 
-# Running sangerseq() simultaneously for each input sample
+# Multi-threading analysis of single-threaded chromatogram analysis
 def multi_sanger():
     processes = []
     for i in range(0, len(folder_names)):
@@ -219,7 +221,7 @@ def multi_sanger():
 
 
 def main():
-    # Parser setup, input validation, and preparing log file
+    # Parser setup, input/output validation, and preparing log file
     global cmd_muscle
     parser_config()
     logging.basicConfig(level=logging.DEBUG,
@@ -240,28 +242,37 @@ def main():
                  "Keep all files:\t\t{kp}\n"
                  .format(inp=inputfolder, od=outdir, gb=genbank, td=threads, kp=keep))
 
-    # Programme inputs
+    # Analysis inputs
     cmd_genbank = "bio fetch {gb} > {wd}/{gb}.gb"\
         .format(wd=workdir, gb=genbank)
     st_genbank = "Obtaining genbank entry: {gb}"\
         .format(gb=genbank)
     ed_genbank = "Successfully obtained Genbank entry: {gb}"\
         .format(gb=genbank)
-    cmd_muscle = "cat {wd}/*/*.fa > {wd}/{sq} && muscle -align {wd}/{sq} -output {od}/{ot} -threads {ts}"\
-        .format(wd=workdir, sq="combined.fa", od=outdir, ot="diversified_aln.fa", ts=threads)
+    cmd_muscle = "cat {wd}/*/*.fa > {wd}/{sq} && " \
+                 "muscle -align {wd}/{sq} -output {od}/{ou} -threads {ts} && " \
+                 "muscle -align {wd}/{sq} -output {od}/{ot} -threads {ts} -diversified"\
+        .format(wd=workdir, sq="combined.fa", od=outdir, ou="aln.fa", ot="diversified_aln_confseq.efa", ts=threads)
     # add -diversified
     st_muscle = "Starting alignment with muscle"
     ed_muscle = "Successfully performed alignment"
+    cmd_muscle_data = "{me} -addconfseq {od}/{it} -output {od}/{ou} ; " \
+                      "{me} -letterconf {od}/{it} -ref {al} -output {od}/{ot} -html {od}/{hl} -jalview {od}/{jv} ; " \
+                      "{me} -efatats {od}/{it} -log {od}/efastats.log ; " \
+                      "{me} -disperse {od}/{it} -log {od}/disperse.log "\
+        .format(me="muscle", od=outdir, it="diversified_aln.efa", ou="diversified_aln_confseq.efa", ot="letterconf.afa",
+                al="aln.fa", hl="letterconf.html", jv="letterconf_jalview.features")
+    st_muscle_data = "Starting collection of additional muscle alignment data"
+    ed_muscle_data = "Successfully obtained additional data"
 
-
-    # RUNNING ANALYSIS ARGUMENTS
+    # Running analysis
     process_run(cmd_genbank, st_genbank, ed_genbank)
     work_prep()
     multi_sanger()
     process_run(cmd_muscle, st_muscle, ed_muscle)
+    process_run(cmd_muscle_data, st_muscle_data, ed_muscle_data)
 
-
-# Finishing analysis
+    # Finishing analysis
     tend = int(time.time() - start_time)
     elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
     logging.info("Analysis successful. Time to completion: {et}".format(et=elapsed_time))
@@ -272,4 +283,3 @@ if __name__ == '__main__':
     start_time = time.time()
     date = datetime.now()
     main()
-
