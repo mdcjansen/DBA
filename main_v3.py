@@ -7,8 +7,8 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.2"
-__date__ = "28/04/2023"
+__version__ = "0.3"
+__date__ = "08/05/2023"
 
 
 # Check thread input
@@ -18,80 +18,72 @@ def cpu_threads(thread_input):
     else:
         return multiprocessing.cpu_count()
 
-
-# Validate existence of input
+# Validate input folder
 def valid_in(inputfolder):
-    input = glob.glob(inputfolder)
-    input = ''.join(inputfolder)
     if len(inputfolder) == 0:
-        print("No input file found. Exiting programme.\n")
-        logging.warning("No input file found. Exiting programme.")
+        logging.warning("No input folder found. Exiting programme.")
         sys.exit(1)
     elif len(inputfolder) != 0:
         if os.path.exists(inputfolder) == True:
-            print("\nFound folder: {fn}".format(fn= foldername))
-            logging.info("Found folder {fn}".format(fn= foldername))
+            logging.info("Found folder {fn}".format(fn=inputfolder))
         elif os.path.exists(inputfolder) == False:
-            print("\nNo input file found")
-            logging.error("No input file found.")
+            logging.error("No input folder found.")
             sys.exit(1)
 
 
-# Checking output directory
+# Validate output folder
 def valid_out(outdir):
-    if os.path.exists(outdir) == True:
-        print("\nOutput directory already exists, do you want to clear the contents of the directory?")
+    if os.path.exists(outdir):
         logging.warning("Output directory already exists, do you want to clear the contents of the directory?")
-        answer_clearing = input("[y/n/exit]\n")
+        answer_clearing = input("[y/n/exit]: ")
+        time.sleep(0.5)
+        print("\033[A                             \033[A")
         if answer_clearing == "y" or answer_clearing == "Y":
-            logging.info("Answer: {ac}".format(ac= answer_clearing))
-            print("\nClearing directory...", end="\r")
+            logging.info("Answer:\tYes")
             logging.info("Clearing directory...")
             os.chdir(outdir)
-            os.system("find . ! -name 'Barcoding.log' ! -name '.' -type d -exec rm -rf {} +")
-            os.system("find . ! -name 'Barcoding.log' ! -name '.' ! -type d -exec rm -rf {} +")
-            print("Output directory has been cleared.\n")
             logging.info("Output directory has been cleared")
         elif answer_clearing == "n" or answer_clearing == "N":
-            logging.info("Answer: {ac}".format(ac=answer_clearing))
-            print("\nContinue analysis in selected folder or create default output directory for analysis?")
+            logging.info("Answer:\tNo")
             logging.info("Continue analysis in selected folder or create default output directory for analysis?")
-            answer_outdir = input("[con/def/exit]\n")
-            if answer_outdir == "con" or answer_outdir == "CON":
-                logging.info("Answer: {ao}".format(ao=answer_outdir))
-                print("\nDirectory will not be cleared. Analyses resuming.\nNOTE: Existing data might be overwritten!\n")
+            answer_outdir = input("[continue/create/exit]: ")
+            time.sleep(0.5)
+            print("\033[A                             \033[A")
+            if answer_outdir == "continue" or answer_outdir == "CONTINUE":
+                logging.info("Answer:\tContinue")
                 logging.warning("Directory will not be cleared. Analyses resuming. NOTE: Existing data might be overwritten!")
-            elif answer_clearing == "def" or answer_clearing == "DEF":
-                logging.info("Answer: {ao}".format(ao=answer_outdir))
-                print("\nContinuing analysis with default output directory")
+            elif answer_clearing == "create" or answer_clearing == "CREATE":
+                logging.info("Answer:\tCreate")
                 logging.info("Continuing analysis with default output directory")
             elif answer_clearing == "exit" or answer_clearing == "EXIT":
-                logging.info("Answer: {ac}".format(ac=answer_clearing))
-                print("\nExiting analysis")
-                logging.info("Analysis terminated by user, Analysis will be stopped")
+                logging.info("Answer:\tExit")
+                tend = int(time.time() - start_time)
+                elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
+                logging.info("Analysis terminated by user. Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
                 sys.exit(1)
             else:
-                print("\nUnknown input. Please provide a valid input (con/CON - def/DEF - exit/EXIT). Terminating analysis.\n")
                 logging.error("Unknown input. Please provide a valid input (con/CON - def/DEF - exit/EXIT). Terminating analysis.\n\n")
                 sys.exit(1)
         elif answer_clearing == "exit" or answer_clearing == "EXIT":
             logging.info("Answer: {ac}".format(ac=answer_clearing))
-            print("\nExiting analysis")
-            logging.info("Analysis terminated by user, Analysis will be stopped")
+            tend = int(time.time() - start_time)
+            elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
+            logging.info("Analysis terminated by user. Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
             sys.exit(1)
         else:
-            print("\nUnknown input. Please provide a valid input (y/Y - n/N - exit/EXIT). Terminating analysis.\n")
             logging.error("Unknown input. Please provide a valid input (y/Y - n/N - exit/EXIT). Terminating analysis.\n\n")
+            tend = int(time.time() - start_time)
+            elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
+            logging.error("Analysis terminated due to bad input. Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
             sys.exit(1)
-    elif os.path.exists(outdir) == False:
+    elif not os.path.exists(outdir):
         os.makedirs(outdir)
-        print("\nOutput directory: {od} has been created".format(od=outdir))
         logging.info("Output directory: {od} has been created".format(od=outdir))
-        logging.info("Settings barcoding analysis:\n\nInput file:\t\t{fn}\nOutput directory:\t{od}\nThreads:\t\t{td}\nEstimated\nKeep all files:\t\t{kp}\n".format(fn=foldername, od=outdir, td=threads, kp=keep))
+
 
 # Setup parser
 def parser_config():
-    global argument, parser, inputfolder, foldername, outdir, logfile, threads, keep, genbank, root, workdir
+    global argument, parser, inputfolder, outdir, logfile, threads, keep, genbank, root, workdir
     parser = argparse.ArgumentParser(prog="Automated DNA barcoding analysis",
                                      description="ADba is designed to automate the process of DNA barcoding by utilising standard Sanger sequencing data and user provided reference gene numbers."
                                                  "This pipeline visualises sequences",
@@ -119,9 +111,8 @@ def parser_config():
                         metavar="[threads]",
                         help="Amount of threads.",
                         required=False,
-                        default=cpu_threads(8),
+                        default=cpu_threads(20),
                         type=int)
-
     parser.add_argument("--keep",
                         metavar='',
                         help="Keep all files produced.",
@@ -136,10 +127,9 @@ def parser_config():
         sys.exit(0)
     root = os.path.dirname(os.path.realpath(__file__))
     inputfolder = os.path.abspath(argument.i)
-    foldername = os.path.basename(argument.i)
     genbank = str(argument.g)
     outdir = os.path.abspath(argument.o)
-    logfile = "{rt}/Barcoding.log".format(rt=root)
+    logfile = "{rt}/barcoding.log".format(rt=root)
     threads = str(argument.t)
     keep = argument.keep
     workdir = os.path.join(root, "workdir")
@@ -152,24 +142,47 @@ def parser_config():
 # Fetching genbank database
 def get_genbank():
     logging.info("Obtaining genbank entry")
-    print("Obtaining genbank entry")
-    genbankfunc = "bio fetch {gb} > {wd}/{gb}.gb".format(wd=workdir, gb=genbank)
-    os.system(genbankfunc)
-    logging.info("Acquired entry {gb} successfully".format(gb=genbank))
-    print("Acquired entry {gb} successfully".format(gb=genbank))
+    cmd = "bio fetch {gb} > {wd}/{gb}.gb".format(wd=workdir, gb=genbank)
+    proc = subprocess.run([cmd],
+                          shell=True,
+                          text=True,
+                          capture_output=True
+                          )
+    if len(proc.stderr) != 0:
+        logging.error(proc.stderr)
+        tend = int(time.time() - start_time)
+        elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
+        logging.error("Analysis terminated after: {et}\n\n\n".format(et=elapsed_time))
+        sys.exit(1)
+    else:
+        logging.info("Genbank entry: {gb} obtained successfully".format(gb=genbank))
 
-# production of chromatogram and chromatogram score
+
+# production of chromatogram
 def sangerseq():
+    logging.info("Creating chromatogram")
     os.system("cp {inp}/*/*.ab1 {wd}/".format(inp=inputfolder, wd=workdir))
-    sangerfunc = "sangerseq_viewer -s {wd}/{gb}.gb -q {wd}/ -o {o}/{cg}.png -l 200 -d 500"\
+    cmd= "sangerseq_viewer -s {wd}/{gb}.gb -q {wd}/ -o {o}/{cg}.png -l 200 -d 100"\
         .format(wd=workdir, gb=genbank, o=outdir, cg="chromatogram")
-    os.system(sangerfunc)
+    proc = subprocess.run([cmd],
+                          shell=True,
+                          text=True,
+                          capture_output=True
+                          )
+    if len(proc.stderr) != 0:
+        logging.error(proc.stderr)
+        tend = int(time.time() - start_time)
+        elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
+        logging.error("Analysis terminated after: {et}\n\n\n".format(et=elapsed_time))
+        sys.exit(1)
+    else:
+        logging.info("Successfully produced chromatogram")
+    # -d to 500
 
 def main():
     # Input validation and preparing log file
     parser_config()
-    logging.basicConfig(#filename=logfile,
-                        level=logging.DEBUG,
+    logging.basicConfig(level=logging.DEBUG,
                         format="%(asctime)s - %(levelname)-8s - %(threadName)-10s - %(message)s",
                         handlers=[
                             logging.FileHandler(logfile),
@@ -179,6 +192,13 @@ def main():
     logging.info("Barcoding analysis initiated")
     valid_in(inputfolder)
     valid_out(outdir)
+    logging.info("Settings barcoding analysis:\n\n"
+                 "Input folder:\t\t{inp}\n"
+                 "Output directory:\t{od}\n"
+                 "Genbank accession no.:\t{gb}\n"
+                 "Threads:\t\t{td}\n"
+                 "Keep all files:\t\t{kp}\n"
+                 .format(inp=inputfolder, od=outdir, gb=genbank, td=threads, kp=keep))
 
 # RUNNING ANALYSIS ARGUMENTS
 
@@ -188,9 +208,7 @@ def main():
 # Finishing analysis
     tend = int(time.time() - start_time)
     elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
-    bc_end = "\nAnalysis complete. The analysis took {time} to complete.".format(time=elapsed_time)
-    print(bc_end)
-    logging.info("Completed analysis\n{mg}\n\n\n".format(mg=bc_end))
+    logging.info("Analysis successful. Time to completion: {et}".format(et=elapsed_time))
     sys.exit(0)
 
 
