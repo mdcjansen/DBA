@@ -12,7 +12,7 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 __date__ = "12/05/2023"
 
 
@@ -67,6 +67,8 @@ def parser_config():
     genbank = str(argument.g)
     outdir = os.path.abspath(argument.o)
     logfile = "{rt}/barcoding.log".format(rt=root)
+    if os.path.isfile(logfile):
+        os.remove(logfile)
     threads = str(argument.t)
     keep = argument.keep
     workdir = os.path.join(root, "workdir")
@@ -117,7 +119,7 @@ def valid_out(outdir):
         if answer_clearing == "y" or answer_clearing == "Y":
             logging.info("Answer:\tYes")
             logging.info("Clearing directory...")
-            os.chdir(outdir)
+            shutil.rmtree(outdir)
             logging.info("Output directory has been cleared")
         elif answer_clearing == "n" or answer_clearing == "N":
             logging.info("Answer:\tNo")
@@ -133,13 +135,14 @@ def valid_out(outdir):
             elif answer_clearing == "create" or answer_clearing == "CREATE":
                 logging.info("Answer:\tCreate")
                 logging.info("Continuing analysis with default output directory")
+                os.makedirs("barcoding_output_{dt}/".format(dt=date.strftime("%d-%m-%Y_%H-%M-%S")))
             elif answer_clearing == "exit" or answer_clearing == "EXIT":
                 logging.info("Answer:\tExit")
                 tend = int(time.time() - start_time)
                 elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
                 logging.info("Analysis terminated by user. "
                              "Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
-                sys.exit(1)
+                sys.exit(0)
             else:
                 logging.error("Unknown input. "
                               "Please provide a valid input (con/CON - def/DEF - exit/EXIT). "
@@ -151,7 +154,7 @@ def valid_out(outdir):
             elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
             logging.info("Analysis terminated by user. "
                          "Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
-            sys.exit(1)
+            sys.exit(0)
         else:
             logging.error("Unknown input. "
                           "Please provide a valid input (y/Y - n/N - exit/EXIT). "
