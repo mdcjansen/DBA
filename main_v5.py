@@ -12,8 +12,8 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.5.1"
-__date__ = "11/05/2023"
+__version__ = "0.5.2"
+__date__ = "12/05/2023"
 
 
 # Setup parser
@@ -175,7 +175,7 @@ def process_run(cmd_in, process_start, completion):
                              capture_output=True
                              )
     if len(process.stderr) != 0:
-        if cmd_in == cmd_muscle:
+        if cmd_in == cmd_muscle or cmd_in == cmd_muscle_data:
             pass
         else:
             process_err(process)
@@ -222,7 +222,7 @@ def multi_sanger():
 
 def main():
     # Parser setup, input/output validation, and preparing log file
-    global cmd_muscle
+    global cmd_muscle, cmd_muscle_data
     parser_config()
     logging.basicConfig(level=logging.DEBUG,
                         format="%(asctime)s - %(levelname)-8s - %(message)s",
@@ -243,7 +243,8 @@ def main():
                  .format(inp=inputfolder, od=outdir, gb=genbank, td=threads, kp=keep))
 
     # Analysis inputs
-    cmd_genbank = "bio fetch {gb} > {wd}/{gb}.gb"\
+    cmd_genbank = "bio fetch {gb} > {wd}/{gb}.gb ; " \
+                  "bio fetch {gb} --format fasta > {wd}/{gb}.fasta"\
         .format(wd=workdir, gb=genbank)
     st_genbank = "Obtaining genbank entry: {gb}"\
         .format(gb=genbank)
@@ -257,11 +258,12 @@ def main():
     st_muscle = "Starting alignment with muscle"
     ed_muscle = "Successfully performed alignment"
     cmd_muscle_data = "{me} -addconfseq {od}/{it} -output {od}/{ou} ; " \
-                      "{me} -letterconf {od}/{it} -ref {al} -output {od}/{ot} -html {od}/{hl} -jalview {od}/{jv} ; " \
+                      "{me} -letterconf {od}/{it} -ref {od}/{al} -output {od}/{ot}" \
+                      " -html {od}/{hl} -jalview {od}/{jv} ; " \
                       "{me} -efatats {od}/{it} -log {od}/efastats.log ; " \
                       "{me} -disperse {od}/{it} -log {od}/disperse.log "\
-        .format(me="muscle", od=outdir, it="diversified_aln.efa", ou="diversified_aln_confseq.efa", ot="letterconf.afa",
-                al="aln.fa", hl="letterconf.html", jv="letterconf_jalview.features")
+        .format(me="muscle", od=outdir, it="/diversified_aln.efa", ou="diversified_aln_confseq.efa",
+                ot="letterconf.afa", al="aln.fa", hl="letterconf.html", jv="letterconf_jalview.features")
     st_muscle_data = "Starting collection of additional muscle alignment data"
     ed_muscle_data = "Successfully obtained additional data"
 
