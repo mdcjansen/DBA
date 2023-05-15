@@ -12,8 +12,8 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.5.3"
-__date__ = "12/05/2023"
+__version__ = "0.5.4"
+__date__ = "15/05/2023"
 
 
 # Setup parser
@@ -123,31 +123,8 @@ def valid_out(outdir):
             logging.info("Output directory has been cleared")
         elif answer_clearing == "n" or answer_clearing == "N":
             logging.info("Answer:\tNo")
-            logging.info("Continue analysis in selected folder or create default output directory for analysis?")
-            answer_outdir = input("[continue/create/exit]: ")
-            time.sleep(0.5)
-            print("\033[A                             \033[A")
-            if answer_outdir == "continue" or answer_outdir == "CONTINUE":
-                logging.info("Answer:\tContinue")
-                logging.warning("Directory will not be cleared. "
-                                "Analyses resuming. "
-                                "NOTE: Existing data might be overwritten!")
-            elif answer_clearing == "create" or answer_clearing == "CREATE":
-                logging.info("Answer:\tCreate")
-                logging.info("Continuing analysis with default output directory")
-                os.makedirs("barcoding_output_{dt}/".format(dt=date.strftime("%d-%m-%Y_%H-%M-%S")))
-            elif answer_clearing == "exit" or answer_clearing == "EXIT":
-                logging.info("Answer:\tExit")
-                tend = int(time.time() - start_time)
-                elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
-                logging.info("Analysis terminated by user. "
-                             "Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
-                sys.exit(0)
-            else:
-                logging.error("Unknown input. "
-                              "Please provide a valid input (con/CON - def/DEF - exit/EXIT). "
-                              "Terminating analysis.\n\n")
-                sys.exit(1)
+            logging.info("Continuing analysis in default output directory")
+            os.makedirs("barcoding_output_{dt}/".format(dt=date.strftime("%d-%m-%Y_%H-%M-%S")))
         elif answer_clearing == "exit" or answer_clearing == "EXIT":
             logging.info("Answer: {ac}".format(ac=answer_clearing))
             tend = int(time.time() - start_time)
@@ -257,7 +234,6 @@ def main():
                  "muscle -align {wd}/{sq} -output {od}/{ou} -threads {ts} && " \
                  "muscle -align {wd}/{sq} -output {od}/{ot} -threads {ts} -diversified"\
         .format(wd=workdir, sq="combined.fa", od=outdir, ou="aln.fa", ot="diversified_aln_confseq.efa", ts=threads)
-    # add -diversified
     st_muscle = "Starting alignment with muscle"
     ed_muscle = "Successfully performed alignment"
     cmd_muscle_data = "{me} -addconfseq {od}/{it} -output {od}/{ou} ; " \
