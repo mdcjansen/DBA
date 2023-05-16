@@ -12,13 +12,15 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.5.4"
-__date__ = "15/05/2023"
+__version__ = "0.5.5"
+__date__ = "16/05/2023"
 
 
-# Setup parser
-def parser_config():
+# Configure inputs
+def config():
     global argument, parser, inputfolder, outdir, logfile, threads, keep, genbank, root, workdir
+
+    # Setup parser
     parser = argparse.ArgumentParser(prog="Automated DNA barcoding analysis",
                                      description="ADba is designed to automate the process of DNA barcoding "
                                                  "by utilising standard Sanger sequencing data "
@@ -63,32 +65,25 @@ def parser_config():
         parser.print_help(sys.stderr)
         sys.exit(0)
     root = os.path.dirname(os.path.realpath(__file__))
-    inputfolder = os.path.abspath(argument.i)
     genbank = str(argument.g)
-    outdir = os.path.abspath(argument.o)
+    threads = str(argument.t)
+    keep = argument.keep
+
+    # Configuring logfile
     logfile = "{rt}/barcoding.log".format(rt=root)
     if os.path.isfile(logfile):
         os.remove(logfile)
-    threads = str(argument.t)
-    keep = argument.keep
-    workdir = os.path.join(root, "workdir")
-    if not os.path.isdir(workdir):
-        os.makedirs(workdir)
-    if os.path.isdir(workdir):
-        shutil.rmtree(workdir)
-        os.makedirs(workdir)
+    logging.basicConfig(level=logging.DEBUG,
+                        format="%(asctime)s - %(levelname)-8s - %(message)s",
+                        handlers=[
+                            logging.FileHandler(logfile),
+                            logging.StreamHandler()
+                            ]
+                        )
+    logging.info("Barcoding analysis initiated")
 
-
-# Check thread input
-def cpu_threads(thread_input):
-    if multiprocessing.cpu_count() > thread_input:
-        return thread_input
-    else:
-        return multiprocessing.cpu_count()
-
-
-# Validate input folder
-def valid_in(inputfolder):
+    # Validating input
+    inputfolder = os.path.abspath(argument.i)
     if len(inputfolder) == 0:
         logging.warning("No input folder found.")
         tend = int(time.time() - start_time)
@@ -108,42 +103,32 @@ def valid_in(inputfolder):
             logging.error("Analysis terminated after: {et}\n\n\n".format(et=elapsed_time))
             sys.exit(1)
 
-
-# Validate output folder
-def valid_out(outdir):
+    # Validating output
+    outdir = os.path.abspath(argument.o)
     if os.path.exists(outdir):
-        logging.warning("Output directory already exists, do you want to clear the contents of the directory?")
-        answer_clearing = input("[y/n/exit]: ")
-        time.sleep(0.5)
-        print("\033[A                             \033[A")
-        if answer_clearing == "y" or answer_clearing == "Y":
-            logging.info("Answer:\tYes")
-            logging.info("Clearing directory...")
-            shutil.rmtree(outdir)
-            logging.info("Output directory has been cleared")
-        elif answer_clearing == "n" or answer_clearing == "N":
-            logging.info("Answer:\tNo")
-            logging.info("Continuing analysis in default output directory")
-            os.makedirs("barcoding_output_{dt}/".format(dt=date.strftime("%d-%m-%Y_%H-%M-%S")))
-        elif answer_clearing == "exit" or answer_clearing == "EXIT":
-            logging.info("Answer: {ac}".format(ac=answer_clearing))
-            tend = int(time.time() - start_time)
-            elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
-            logging.info("Analysis terminated by user. "
-                         "Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
-            sys.exit(0)
-        else:
-            logging.error("Unknown input. "
-                          "Please provide a valid input (y/Y - n/N - exit/EXIT). "
-                          "Terminating analysis.\n\n")
-            tend = int(time.time() - start_time)
-            elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
-            logging.error("Analysis terminated due to bad input. "
-                          "Analysis stopped after: {et}\n\n\n".format(et=elapsed_time))
-            sys.exit(1)
+        logging.warning("Output directory already exists, Continuing analysis in default output folder")
+        outdir = "barcoding_output_{dt}/".format(dt=date.strftime("%d-%m-%Y_%H-%M-%S"))
+        os.makedirs(outdir)
+        logging.info("Output directory: {od} has been created".format(od=outdir))
     elif not os.path.exists(outdir):
         os.makedirs(outdir)
         logging.info("Output directory: {od} has been created".format(od=outdir))
+
+    # Creating working directory
+    workdir = os.path.join(root, "workdir")
+    if not os.path.isdir(workdir):
+        os.makedirs(workdir)
+    if os.path.isdir(workdir):
+        shutil.rmtree(workdir)
+        os.makedirs(workdir)
+
+
+# Check thread input
+def cpu_threads(thread_input):
+    if multiprocessing.cpu_count() > thread_input:
+        return thread_input
+    else:
+        return multiprocessing.cpu_count()
 
 
 # Running analysis
@@ -203,17 +188,7 @@ def multi_sanger():
 def main():
     # Parser setup, input/output validation, and preparing log file
     global cmd_muscle, cmd_muscle_data
-    parser_config()
-    logging.basicConfig(level=logging.DEBUG,
-                        format="%(asctime)s - %(levelname)-8s - %(message)s",
-                        handlers=[
-                            logging.FileHandler(logfile),
-                            logging.StreamHandler()
-                            ]
-                        )
-    logging.info("Barcoding analysis initiated")
-    valid_in(inputfolder)
-    valid_out(outdir)
+    config()
     logging.info("Settings barcoding analysis:\n\n"
                  "Input folder:\t\t{inp}\n"
                  "Output directory:\t{od}\n"
