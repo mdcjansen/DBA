@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import glob
 import logging
 import multiprocessing
 import os
@@ -12,13 +13,13 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.5.5"
-__date__ = "16/05/2023"
+__version__ = "0.5.6"
+__date__ = "18/05/2023"
 
 
 # Configure inputs
 def config():
-    global argument, parser, inputfolder, outdir, logfile, threads, keep, genbank, root, workdir
+    global argument, parser, inputfolder, inputfasta, outdir, logfile, threads, keep, genbank, root, workdir
 
     # Setup parser
     parser = argparse.ArgumentParser(prog="Automated DNA barcoding analysis",
@@ -102,6 +103,11 @@ def config():
             elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
             logging.error("Analysis terminated after: {et}\n\n\n".format(et=elapsed_time))
             sys.exit(1)
+    for file in glob.glob("{inf}/*.fasta"):
+        inputfasta = file
+        print(inputfasta)
+    sys.exit(0)
+
 
     # Validating output
     outdir = os.path.abspath(argument.o)
@@ -114,13 +120,22 @@ def config():
         os.makedirs(outdir)
         logging.info("Output directory: {od} has been created".format(od=outdir))
 
-    # Creating working directory
+    # Creating and preparing working directory
+    logging.info("Preparing working folder for {fc} inputs"
+                 .format(fc=str(folder_count)))
     workdir = os.path.join(root, "workdir")
     if not os.path.isdir(workdir):
         os.makedirs(workdir)
     if os.path.isdir(workdir):
         shutil.rmtree(workdir)
         os.makedirs(workdir)
+    num_folder = 0
+    while num_folder != folder_count:
+        os.makedirs("{wd}/{fn}"
+                    .format(wd=workdir, fn=folder_names[num_folder]))
+        os.system("cp {inp}/{fn}/*/* {wd}/{fn}/"
+                  .format(inp=inputfolder, fn=folder_names[num_folder], wd=workdir))
+        num_folder += 1
 
 
 # Check thread input
@@ -143,31 +158,13 @@ def process_run(cmd_in, process_start, completion):
         if cmd_in == cmd_muscle or cmd_in == cmd_muscle_data:
             pass
         else:
-            process_err(process)
+            logging.error(process.stderr)
+            tend = int(time.time() - start_time)
+            elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
+            logging.error("Analysis terminated after: {et}\n\n\n".format(et=elapsed_time))
+            sys.exit(1)
     else:
         logging.info(completion)
-
-
-# Error posting during analysis
-def process_err(process):
-    logging.error(process.stderr)
-    tend = int(time.time() - start_time)
-    elapsed_time = "{:02d}:{:02d}:{:02d}".format(tend // 3600, (tend % 3600 // 60), tend % 60)
-    logging.error("Analysis terminated after: {et}\n\n\n".format(et=elapsed_time))
-    sys.exit(1)
-
-
-# Preparing working folder for processing of  datasets
-def work_prep():
-    logging.info("Preparing working folder for {fc} inputs"
-                 .format(fc=str(folder_count)))
-    num_folder = 0
-    while num_folder != folder_count:
-        os.makedirs("{wd}/{fn}"
-                    .format(wd=workdir, fn=folder_names[num_folder]))
-        os.system("cp {inp}/{fn}/*/* {wd}/{fn}/"
-                  .format(inp=inputfolder, fn=folder_names[num_folder], wd=workdir))
-        num_folder += 1
 
 
 # Multi-threading analysis of single-threaded chromatogram analysis
@@ -198,15 +195,31 @@ def main():
                  .format(inp=inputfolder, od=outdir, gb=genbank, td=threads, kp=keep))
 
     # Analysis inputs
+
+    # Obtaining data from genbank
     cmd_genbank = "bio fetch {gb} > {wd}/{gb}.gb ; " \
-                  "bio fetch {gb} --format fasta > {wd}/{gb}.fasta"\
+                  "bio fetch {gb} --format fasta > {wd}/{gb}.fasta ; " \
+                  "bio fetch {gb} --format protein > {wd}/{gb}.prot"\
         .format(wd=workdir, gb=genbank)
     st_genbank = "Obtaining genbank entry: {gb}"\
         .format(gb=genbank)
     ed_genbank = "Successfully obtained Genbank entry: {gb}"\
         .format(gb=genbank)
-    cmd_muscle = "cat {wd}/*/*.fa > {wd}/{sq} && " \
-                 "muscle -align {wd}/{sq} -output {od}/{ou} -threads {ts} && " \
+
+    # Running BLASTn and BLASTx
+    cmd_blast_db = "makeblastdb -in {wd}/{gb}.fasta -dbtype nucl -out {wd}/{gb}_nucldb ; " \
+                   "makeblastdb -in {wd}/{gb}.fasta -dbtype prot -out {wd}/{gb}_protdb"\
+        .format(wd=workdir, gb=genbank)
+    st_blast_db = "Creating blast databases"
+    ed_blast_db = "Successfully created databases"
+    cmd_blast_run = "blastn -query {wd}/{inf} -db {wd}/{gb}_nucldb -out {wd}/blastn.tsv -outfmt 7 ; " \
+                    "blastx -query {wd}/{inf} -db {wd}/{gb}_protdb -out {wd}/blastx.tsv -outfmt 7"\
+        .format(wd=workdir, inf=inputfasta, gb=genbank)
+    st_blast_run = "Starting BLASTn and BLASTx analysis"
+    ed_blast_run = "Successfully completed BLASTn and BLASTx analysis"
+
+    # Aligning sequences with MUSCLE
+    cmd_muscle = "muscle -align {wd}/{sq} -output {od}/{ou} -threads {ts} && " \
                  "muscle -align {wd}/{sq} -output {od}/{ot} -threads {ts} -diversified"\
         .format(wd=workdir, sq="combined.fa", od=outdir, ou="aln.fa", ot="diversified_aln_confseq.efa", ts=threads)
     st_muscle = "Starting alignment with muscle"
@@ -223,10 +236,11 @@ def main():
 
     # Running analysis
     process_run(cmd_genbank, st_genbank, ed_genbank)
-    work_prep()
-    multi_sanger()
-    process_run(cmd_muscle, st_muscle, ed_muscle)
-    process_run(cmd_muscle_data, st_muscle_data, ed_muscle_data)
+    process_run(cmd_blast_db, st_blast_db, ed_blast_db)
+    process_run(cmd_blast_run, st_blast_run, ed_blast_run)
+    # multi_sanger()
+    # process_run(cmd_muscle, st_muscle, ed_muscle)
+    # process_run(cmd_muscle_data, st_muscle_data, ed_muscle_data)
 
     # Finishing analysis
     tend = int(time.time() - start_time)
