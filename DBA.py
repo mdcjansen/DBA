@@ -13,7 +13,7 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 __date__ = "19/05/2023"
 
 
@@ -183,8 +183,8 @@ def process_run(cmd_in, process_start, completion):
 def multi_sanger():
     processes = []
     for i in range(0, len(folder_names)):
-        cmd = "sangerseq_viewer -s {wd}/{gb}.gb -q {wd}/{fn} -o {o}/{cg}_{fn}.png -l 200 -d 100" \
-            .format(wd=workdir, gb=genbank, fn=folder_names[int(i)], o=outdir, cg="chromatogram")
+        cmd = "sangerseq_viewer -s {wd}/{gbn}.gb -q {wd}/{fn} -o {o}{cg}_{fn}.pdf" \
+            .format(wd=workdir, gbn=genbank_nucl, fn=folder_names[int(i)], o=outdir, cg="chromatogram")
         st_log = "Creating chromatogram for {fn}".format(fn=folder_names[int(i)])
         ed_log = "Successfully produced chromatogram for {fn}".format(fn=folder_names[int(i)])
         p = multiprocessing.Process(target=process_run, args=(cmd, st_log, ed_log))
@@ -225,23 +225,23 @@ def main():
         .format(wd=workdir, gbn=genbank_nucl, gbp=genbank_prot)
     st_blast_db = "Creating blast databases"
     ed_blast_db = "Successfully created databases"
-    cmd_blast_run = "blastn -query {wd}/{inf} -db {wd}/{gbn}_nucldb -out {ou}/blastn.tsv -outfmt 6 ; " \
-                    "blastx -query {wd}/{inf} -db {wd}/{gbp}_protdb -out {ou}/blastx.tsv -outfmt 6"\
+    cmd_blast_run = "blastn -query {wd}/{inf} -db {wd}/{gbn}_nucldb -out {ou}blastn.tsv -outfmt 6 ; " \
+                    "blastx -query {wd}/{inf} -db {wd}/{gbp}_protdb -out {ou}blastx.tsv -outfmt 6"\
         .format(wd=workdir, inf=inputfasta, ou=outdir, gbn=genbank_nucl, gbp=genbank_prot)
     st_blast_run = "Starting BLASTn and BLASTx analysis"
     ed_blast_run = "Successfully completed BLASTn and BLASTx analysis"
 
     # Aligning sequences with MUSCLE
-    cmd_muscle = "muscle -align {wd}/{sq} -output {od}/{ou} -threads {ts} && " \
-                 "muscle -align {wd}/{sq} -output {od}/{ot} -threads {ts} -diversified"\
+    cmd_muscle = "muscle -align {wd}/{sq} -output {od}{ou} -threads {ts} && " \
+                 "muscle -align {wd}/{sq} -output {od}{ot} -threads {ts} -diversified"\
         .format(wd=workdir, sq="combined.fa", od=outdir, ou="aln.fa", ot="diversified_aln_confseq.efa", ts=threads)
     st_muscle = "Starting alignment with muscle"
     ed_muscle = "Successfully performed alignment"
     cmd_muscle_data = "{me} -addconfseq {od}/{it} -output {od}/{ou} ; " \
                       "{me} -letterconf {od}/{it} -ref {od}/{al} -output {od}/{ot}" \
-                      " -html {od}/{hl} -jalview {od}/{jv} ; " \
+                      " -html {od}{hl} -jalview {od}/{jv} ; " \
                       "{me} -efatats {od}/{it} -log {od}/efastats.log ; " \
-                      "{me} -disperse {od}/{it} -log {od}/disperse.log "\
+                      "{me} -disperse {od}{it} -log {od}/disperse.log "\
         .format(me="muscle", od=outdir, it="/diversified_aln.efa", ou="diversified_aln_confseq.efa",
                 ot="letterconf.afa", al="aln.fa", hl="letterconf.html", jv="letterconf_jalview.features")
     st_muscle_data = "Starting collection of additional muscle alignment data"
@@ -251,7 +251,7 @@ def main():
     process_run(cmd_genbank, st_genbank, ed_genbank)
     process_run(cmd_blast_db, st_blast_db, ed_blast_db)
     process_run(cmd_blast_run, st_blast_run, ed_blast_run)
-    # multi_sanger()
+    multi_sanger()
     # process_run(cmd_muscle, st_muscle, ed_muscle)
     # process_run(cmd_muscle_data, st_muscle_data, ed_muscle_data)
 
