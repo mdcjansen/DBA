@@ -4,23 +4,24 @@ DNA barcoding analysis pipeline designed to perform phylogenetic analysis on raw
 
 ## Table of contents
 
-* [Requirements](#Requirements)
+* [Requirements](#Requirements-and-dependencies)
 * [Installation](#Installation)
-* [Example commands](#commands)
+* [Example commands](#Example-commands)
 * [Full usage](#Full-usage)
 * [Method](#Method)
-* [Interpeting output](#Interpeting-output)
 * [Acknowledgements](#Acknowledgements)
 * [License](#License)
 
 
 ## Requirements and dependencies
-DBA is designed to run on linux-based systems. The pipeline was specifcally tested on Ubuntu 22.04.2 LTS
-Some tools used during analysis will be installed automatically when the conda environment is being constructed.
+DBA is designed to run on linux-based systems. The pipeline was specifcally tested on Ubuntu 22.04.2 LTS.
+Some tools and most dependencies used during analysis will be installed automatically when the conda environment is being constructed.
 
+The following prerequisites should be installed prior to using DBA
 * Python 3.8+
 * Java
 * Jalview
+	- Note: Jalview should be a system-wide executable as "jalview"
 * MEGA11
 * Anaconda3
 
@@ -57,7 +58,7 @@ conda activate DBA
 This command will display all required and optional arguments in the format presented [below](#Full-usage)
 ```
 DBA.py
-DBA.py -h "or" -help
+DBA.py -h "or" --help
 ```
 
 #### Minimum required input:
@@ -105,6 +106,29 @@ List of arguments:
 
 
 ## Method
+DBA requires a specific folder structure in order to perform the analysis.
+A visualisation of this folder structure is given below where case_data is given as `-i` argument:
+
+```
+	.
+	├── ...
+	├── case_data               
+	│	├── sanger.fasta				# FASTA file containing all sanger sequences to be used during analysis
+	│	├── phylo.mao					# MEGA11 generated file used to perform phylogenetic analysis
+	│	├── species_01					# Folder with sequencing data of first species to be analysed
+	│	│	├── sample_01				# Folder containing sanger sequencing data of the first sample
+	│	│	│	├── sanger_data.ab1
+	│	│	│	└── ...
+	│	│	└── ...
+	│	├── species_02					# Folder with sequencing data of second species to be analysed
+	│	│	├── sample_01				# Folder containing sanger sequencing data of the first sample
+	│	│	│	├── sanger_data.ab1
+	│	│	│	└── ...
+	│	│	└── ...
+	│	└── ...
+	└── ...
+```
+
 DBA will perform phylogenetic analysis as presented below:
 1. If specified, DBA will reverse complement the input fasta file
 2. DBA will obtain genbank information on input genbank accession numbers
@@ -114,9 +138,6 @@ DBA will perform phylogenetic analysis as presented below:
 6. DBA initates [Jalview](https://doi.org10.1093/bioinformatics/btp033) for manual review and trimming of alignment data
 7. [MEGA11](https://doi.org/10.1093/molbev/msab120) is used to perform phylogentic analysis and produce a consensus tree
 8. If specified, supplemental data used during analysis is moved to the output folder and the analysis ends.
-
-
-## Interpeting output
 
 
 ## Acknowledgements
