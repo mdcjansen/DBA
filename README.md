@@ -20,17 +20,12 @@ Some tools and most dependencies used during analysis will be installed automati
 
 The following prerequisites should be installed prior to using DBA
 * Anaconda3
-* Jalview
-	- Note: Jalview should be a system-wide executable as "jalview"
-* Java	
 * MEGA11
-* Python 3.8+
 * Python 3.8+
 * Java
 * Jalview
-	- Note: Jalview should be a system-wide executable as "jalview"
+	- Note: Jalview should be a system-wide executable as: ```jalview```
 * MEGA11
-* Anaconda3
 
 
 ## Installation
@@ -154,7 +149,7 @@ All procedures during analysis are logged and stored in the barcoding.log file
 #### BLAST output
 BLAST results are placed into two tsv files named `blastn.tsv` and `blastx.tsv` for BLASTn and BLASTx results respectively.
 Standard BLAST tabular output format 6 is used to generate the output.
-An example with case data and added header is presented below:
+An example with case data and manually added header is presented below:
 
 qseqid|sseqid|pident|length|mismatch|gapopen|qstart|qend|sstart|send|evalue|bitscore
 ---|---|---|---|---|---|---|---|---|---|---|---|
