@@ -9,7 +9,10 @@ DNA barcoding analysis pipeline designed to perform phylogenetic analysis on raw
 * [Example commands](#Example-commands)
 * [Full usage](#Full-usage)
 * [Method](#Method)
+<<<<<<< HEAD
 * [Interpeting output](#Interpeting-output)
+=======
+>>>>>>> origin/main
 * [Acknowledgements](#Acknowledgements)
 * [License](#License)
 
@@ -19,12 +22,21 @@ DBA is designed to run on linux-based systems. The pipeline was specifcally test
 Some tools and most dependencies used during analysis will be installed automatically when the conda environment is being constructed.
 
 The following prerequisites should be installed prior to using DBA
+<<<<<<< HEAD
 * Anaconda3
 * Jalview
 	- Note: Jalview should be a system-wide executable as "jalview"
 * Java	
 * MEGA11
 * Python 3.8+
+=======
+* Python 3.8+
+* Java
+* Jalview
+	- Note: Jalview should be a system-wide executable as "jalview"
+* MEGA11
+* Anaconda3
+>>>>>>> origin/main
 
 
 ## Installation
@@ -141,6 +153,7 @@ DBA will perform phylogenetic analysis as presented below:
 8. If specified, supplemental data used during analysis is moved to the output folder and the analysis ends.
 
 
+<<<<<<< HEAD
 ## Interpeting output
 DBA produces a single output folder where all results can be found.
 All procedures during analysis are logged and stored in the barcoding.log file
@@ -175,6 +188,8 @@ MEGA generates phylogenetic trees in newick format using user specified paramete
 Newick trees and consensus tree are both present in the output folder. Summary and partition text files are also saved within the output.
 
 
+=======
+>>>>>>> origin/main
 ## Acknowledgements
 DBA uses the following tools in the pipeline:
 * [BLAST](https://doi.org/10.1016/S0022-2836(05)80360-2)
