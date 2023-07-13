@@ -14,8 +14,8 @@ from datetime import datetime
 
 # Credentials
 __author__ = "M.D.C. Jansen"
-__version__ = "1.0.0"
-__date__ = "30/05/2023"
+__version__ = "1.0.2"
+__date__ = "21/06/2023"
 
 
 # Check thread input
@@ -88,7 +88,7 @@ def main():
                  "Threads:\t\t\t\t{td}\n"
                  "Reverse complement fasta:\t\t{rev}\n"
                  "Keep all files:\t\t\t\t{kp}\n"
-                 .format(inp=argument.i, inf=input_fasta, inm=input_mao, od=outdir, gba=genbank_out,
+                 .format(inp=argument.i, inf=input_fasta, inm=input_mao, od=os.path.basename(outdir), gba=genbank_out,
                          gbn=genbank_nucl, gbp=genbank_prot, td=threads, rev=rev, kp=keep))
 
     # Analysis functions
@@ -175,17 +175,21 @@ if __name__ == '__main__':
     date = datetime.now()
 
     # Setup parser
-    parser = argparse.ArgumentParser(prog="Automated DNA barcoding analysis",
-                                     description="ADba is designed to automate the process of DNA barcoding "
+    parser = argparse.ArgumentParser(prog="DBA",
+                                     description="DBA is designed to automate the process of DNA barcoding "
                                                  "by utilising standard Sanger sequencing data "
-                                                 "and user provided reference gene numbers.\n"
+                                                 "and user provided reference gene and protein accession numbers.\n"
                                                  "This pipeline obtains nucleic and protein sequences from genbank, "
                                                  "followed by chromatogram production in .pdf format by utilising "
                                                  "sangerseq viewer.\nNext, BLASTx and BLASTn are run to assess query "
                                                  "coverage against the reference gene.\nMUSCLE is used to align the "
-                                                 "sequences, followed by phylogenetic analysis by MEGA.",
-                                     usage="%(prog)s -i <inputfolder> -g <genbank NC_ID> -p <genbank YP_ID> [options]",
-                                     epilog="")
+                                                 "sequences, followed by manual review in jalview and "
+                                                 "phylogenetic analysis by MEGA.",
+                                     usage="%(prog)s -i <inputfolder> -n <genbank reference NC_ID> "
+                                           "-y <genbank reference YP_ID> -g <genbank outgroup NC_ID> [options]",
+                                     epilog="",
+                                     formatter_class=argparse.RawTextHelpFormatter
+                                     )
     parser._optionals.title = "List of arguments"
     parser.add_argument("-v", "--version",
                         help="Prints program version",
@@ -193,39 +197,46 @@ if __name__ == '__main__':
                         version="Version: {v} Date: {d} By {a}".format(v=__version__, d=__date__, a=__author__))
     parser.add_argument("-i",
                         metavar="[input folder]",
-                        help="Input folder containing per species folders and "
-                             "a single concatenated fasta file for analysis",
+                        help="Input folder containing per species folders, "
+                             "a single concatenated fasta file for analysis and "
+                             "a MEGA mao file for phylogenetic analysis",
+                        required=len(sys.argv) != 1)
+    parser.add_argument("-n",
+                        metavar="[genbank reference nucl acc no.]",
+                        help="genbank nucleotide accession number for the gene to be used as reference, "
+                             "usually starts with the identifier NC_",
+                        required=len(sys.argv) != 1)
+    parser.add_argument("-y",
+                        metavar="[genbank reference prot acc no.]",
+                        help="genbank protein accession number for the protein to be used as reference,"
+                             " usually starts with the identifier YC_",
                         required=len(sys.argv) != 1)
     parser.add_argument("-g",
-                        metavar="[genbank nucl acc no.]",
-                        help="genbank nucleotide accession number, usually starts with the identifier NC_",
-                        required=len(sys.argv) != 1)
-    parser.add_argument("-p",
-                        metavar="[genbank prot acc no.]",
-                        help="genbank protein accession number, usually starts with the identifier YC_",
-                        required=len(sys.argv) != 1)
-    parser.add_argument("-a",
                         metavar="[genbank nucl acc no. for out group]",
-                        help="genbank nucleotide accession number for out group during pyhlogenetic analysis, "
+                        help="genbank nucleotide accession number for outgroup gene used during phylogenetic analysis, "
                              "usually starts with the identifier NC_",
                         required=len(sys.argv) != 1)
     parser.add_argument("-o",
                         metavar="[output folder]",
                         help="Output directory. "
-                             "A default folder will be produced if it hasn't been specified",
+                             "\nA default output folder will be produced in the following format will be created "
+                             "if it hasn't been specified:"
+                             "\nbarcoding_output_current-date_current-time",
                         required=False,
                         default="barcoding_output_{dt}/".format(dt=date.strftime("%d-%m-%Y_%H-%M-%S")))
     parser.add_argument("-t",
                         metavar="[cpu threads]",
-                        help="Maximum amount of threads to be utilised during analysis. "
-                             "Default: 20",
+                        help="Maximum amount of threads to be utilised during analysis."
+                             "\nDefault: 20",
                         required=False,
                         default=cpu_threads(20),
                         type=int)
     parser.add_argument("-keep",
                         metavar='',
-                        help="Keep all files produced during analysis. "
-                             "Files are stored in 'workdir' folder at the location where this script has been executed",
+                        help="Keep all files produced during analysis."
+                             "\nFiles are stored in 'workdir' folder at the location where this script"
+                             "has been executed."
+                             "\nDefault: False",
                         required=False,
                         default=False,
                         type=bool,
@@ -233,7 +244,9 @@ if __name__ == '__main__':
                         const=True)
     parser.add_argument("-rev",
                         metavar='',
-                        help="Reverse compliment the fasta input",
+                        help="Reverse compliment the fasta input."
+                             "\nReverse complimented file is saved as an additional file."
+                             "\nDefault: False",
                         required=False,
                         default=False,
                         type=bool,
@@ -244,9 +257,9 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(0)
     root = os.path.dirname(os.path.realpath(__file__))
-    genbank_nucl = str(argument.g)
-    genbank_prot = str(argument.p)
-    genbank_out = str(argument.a)
+    genbank_nucl = str(argument.n)
+    genbank_prot = str(argument.y)
+    genbank_out = str(argument.g)
     threads = str(argument.t)
     keep = argument.keep
     rev = argument.rev

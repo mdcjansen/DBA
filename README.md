@@ -30,11 +30,6 @@ The following prerequisites should be installed prior to using DBA
 
 ## Installation
 
-#### Install dependecies:
-```
-
-```
-
 #### Install DBA:
 ```
 git clone https://github.com/mdcjansen/DBA
@@ -59,19 +54,19 @@ conda activate DBA
 #### Display options:
 This command will display all required and optional arguments in the format presented [below](#Full-usage)
 ```
-DBA.py
-DBA.py -h "or" --help
+DBA
+DBA -h "or" --help
 ```
 
 #### Minimum required input:
 ```
-DBA.py -i <input folder> -n <genbank reference NC_ID> -y <genbank reference YC_ID> -g <genbank outgroup NC_ID>
+DBA -i <input folder> -n <genbank reference NC_ID> -y <genbank reference YC_ID> -g <genbank outgroup NC_ID>
 ```
 
 #### Example input:
 The input below was used to produce the case data available within this repository:
 ```
-DBA.py -i case_data -n NC_009065 -y YP_001054869 -g NC_02842
+DBA -i case_data -n NC_009065 -y YP_001054869 -g NC_02842
 ```
 
 ## Full usage
