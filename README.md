@@ -132,7 +132,7 @@ DBA will perform phylogenetic analysis as presented below:
 3. [sangerseq_viewer](https://github.com/ponnhide/sangerseq_viewer) is utilised to produce a chromatogram for each of the input species found
 4. [BLAST](https://doi.org/10.1016/S0022-2836(05)80360-2) is performed on the input fasta sequence against the input reference sequences
 5. Multple sequence alignment is performed with [MUSCLE](https://doi.org/10.1101/2021.06.20.449169)
-6. DBA initates [Jalview](https://doi.org10.1093/bioinformatics/btp033) for manual review and trimming of alignment data
+6. DBA initates [Jalview](https://doi.org/10.1093/bioinformatics/btp033) for manual review and trimming of alignment data
 7. [MEGA11](https://doi.org/10.1093/molbev/msab120) is used to perform phylogentic analysis and produce a consensus tree
 8. If specified, supplemental data used during analysis is moved to the output folder and the analysis ends.
 
@@ -174,7 +174,7 @@ Newick trees and consensus tree are both present in the output folder. Summary a
 ## Acknowledgements
 DBA uses the following tools in the pipeline:
 * [BLAST](https://doi.org/10.1016/S0022-2836(05)80360-2)
-* [Jalview](https://doi.org10.1093/bioinformatics/btp033)
+* [Jalview](https://doi.org/10.1093/bioinformatics/btp033)
 * [MEGA11](https://doi.org/10.1093/molbev/msab120)
 * [MUSCLE](https://doi.org/10.1101/2021.06.20.449169)
 * [sangerseq_viewer](https://github.com/ponnhide/sangerseq_viewer)
